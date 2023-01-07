@@ -19,9 +19,12 @@ NEWSPIDER_MODULE = 'blocket.spiders'
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
 from shutil import which
+import os
 
+chrome_path = os.path.join(os.getcwd(), 'spiders', 'chromedriver')
+print(chrome_path)
 SELENIUM_DRIVER_NAME = 'chrome'
-SELENIUM_DRIVER_EXECUTABLE_PATH = which('chromedriver')
+SELENIUM_DRIVER_EXECUTABLE_PATH = chrome_path
 SELENIUM_DRIVER_ARGUMENTS = ['--headless']
 
 DOWNLOADER_MIDDLEWARES = {
