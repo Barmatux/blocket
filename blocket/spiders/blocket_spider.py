@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from scrapy import Spider, Request
 from scrapy_selenium import SeleniumRequest
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 
 logging.getLogger('scrapy').setLevel(logging.ERROR)
 logging.getLogger('urllib3').setLevel(logging.ERROR)
@@ -45,7 +46,7 @@ class BlocketSpider(Spider):
             data = {'title': model.text, 'data': data_table,
                     'price': price.text, 'url': url}
             result ={**additional_info, **data}
-            # print(result)
+            print(result)
             yield result
         try:
             next_page = 'https://www.blocket.se/'\

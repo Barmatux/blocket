@@ -22,7 +22,6 @@ from shutil import which
 import os
 
 chrome_path = os.path.join(os.getcwd(), 'spiders', 'chromedriver')
-print(chrome_path)
 SELENIUM_DRIVER_NAME = 'chrome'
 SELENIUM_DRIVER_EXECUTABLE_PATH = chrome_path
 SELENIUM_DRIVER_ARGUMENTS = ['--headless', "--enable-javascript", "--no-sandbox"]
