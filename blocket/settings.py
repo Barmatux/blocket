@@ -6,6 +6,7 @@
 #     https://docs.scrapy.org/en/latest/topics/settings.html
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
+import json
 
 import boto3
 from botocore.exceptions import ClientError
@@ -40,7 +41,7 @@ BOT_NAME = 'blocket'
 SPIDER_MODULES = ['blocket.spiders']
 NEWSPIDER_MODULE = 'blocket.spiders'
 
-secrets = get_secret()
+secrets = json.loads(get_secret())
 
 MONGO_HOST = secrets['MONGO_HOST']
 MONGO_USER = secrets['MONGO_USER']
@@ -116,7 +117,7 @@ ITEM_PIPELINES = {
     'blocket.pipelines.TranslatedPipeline': 200,
     'blocket.pipelines.MongoPipeline': 300,
 }
-aws_secrets =get_secret('s3')
+aws_secrets = json.loads(get_secret('s3'))
 AWS_ACCESS_KEY_ID = aws_secrets['ACCESS_KEY']
 AWS_SECRET_ACCESS_KEY = aws_secrets['ACCESS_KEY_VALUE']
 IMAGES_STORE = "s3://scrapy-blocket-dev/blocket/"
