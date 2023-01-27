@@ -11,9 +11,9 @@ import boto3
 from botocore.exceptions import ClientError
 
 
-def get_secret():
+def get_secret(secret_name='develop'):
 
-    secret_name = "develop"
+    secret_name = secret_name
     region_name = "us-east-1"
 
     # Create a Secrets Manager client
@@ -40,7 +40,7 @@ BOT_NAME = 'blocket'
 SPIDER_MODULES = ['blocket.spiders']
 NEWSPIDER_MODULE = 'blocket.spiders'
 
-secrets = get_secret
+secrets = get_secret()
 
 MONGO_HOST = secrets['MONGO_HOST']
 MONGO_USER = secrets['MONGO_USER']
@@ -116,9 +116,10 @@ ITEM_PIPELINES = {
     'blocket.pipelines.TranslatedPipeline': 200,
     'blocket.pipelines.MongoPipeline': 300,
 }
-AWS_ACCESS_KEY_ID = 'ACCESS_KEY'
-AWS_SECRET_ACCESS_KEY = 'ACCESS_KEY_VALUE'
-IMAGES_STORE = "s3://bucketname/base-key-dir-if-any/"
+aws_secrets =get_secret('s3')
+AWS_ACCESS_KEY_ID = aws_secrets['ACCESS_KEY']
+AWS_SECRET_ACCESS_KEY = aws_secrets['ACCESS_KEY_VALUE']
+IMAGES_STORE = "s3://scrapy-blocket-dev/blocket/"
 
 SCRAPEOPS_API_KEY = secrets['SCRAPEOPS_API_KEY']
 # Enable and configure the AutoThrottle extension (disabled by default)
