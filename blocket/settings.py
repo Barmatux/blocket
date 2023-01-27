@@ -7,10 +7,44 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
+import boto3
+from botocore.exceptions import ClientError
+
+
+def get_secret():
+
+    secret_name = "develop"
+    region_name = "us-east-1"
+
+    # Create a Secrets Manager client
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
+    )
+
+    try:
+        get_secret_value_response = client.get_secret_value(
+            SecretId=secret_name
+        )
+    except ClientError as e:
+        # For a list of exceptions thrown, see
+        # https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
+        raise e
+
+    # Decrypts secret using the associated KMS key.
+    return get_secret_value_response['SecretString']
+
 BOT_NAME = 'blocket'
 
 SPIDER_MODULES = ['blocket.spiders']
 NEWSPIDER_MODULE = 'blocket.spiders'
+
+secrets = get_secret
+
+MONGO_HOST = secrets['MONGO_HOST']
+MONGO_USER = secrets['MONGO_USER']
+MONGO_PASSWORD = secrets['MONGO_PASSWORD']
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
@@ -18,17 +52,20 @@ NEWSPIDER_MODULE = 'blocket.spiders'
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
-from shutil import which
-import os
-
-chrome_path = os.path.join(os.getcwd(), 'spiders', 'chromedriver')
-SELENIUM_DRIVER_NAME = 'chrome'
-SELENIUM_DRIVER_EXECUTABLE_PATH = chrome_path
-SELENIUM_DRIVER_ARGUMENTS = ['--headless', "--enable-javascript", "--no-sandbox"]
 
 DOWNLOADER_MIDDLEWARES = {
+    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
+    'scrapy.downloadermiddlewares.retry.RetryMiddleware': None,
+    'scrapy_fake_useragent.middleware.RandomUserAgentMiddleware': 400,
+    'scrapy_fake_useragent.middleware.RetryUserAgentMiddleware': 401,
+    'scrapeops_scrapy.middleware.retry.RetryMiddleware': 550,
     'scrapy_selenium.SeleniumMiddleware': 800
 }
+FAKEUSERAGENT_PROVIDERS = [
+    'scrapy_fake_useragent.providers.FakeUserAgentProvider',  # this is the first provider we'll try
+    'scrapy_fake_useragent.providers.FakerProvider',  # if FakeUserAgentProvider fails, we'll use faker to generate a user-agent string for us
+    'scrapy_fake_useragent.providers.FixedUserAgentProvider',  # fall back to USER_AGENT value
+]
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
@@ -73,13 +110,24 @@ DOWNLOADER_MIDDLEWARES = {
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
-#    'blocket.pipelines.BlocketPipeline': 300,
-#}
+ITEM_PIPELINES = {
+    # 'scrapy_deltafetch.DeltaFetch': 90,
+    'scrapy.pipelines.images.ImagesPipeline': 100,
+    'blocket.pipelines.TranslatedPipeline': 200,
+    'blocket.pipelines.MongoPipeline': 300,
+}
+AWS_ACCESS_KEY_ID = 'ACCESS_KEY'
+AWS_SECRET_ACCESS_KEY = 'ACCESS_KEY_VALUE'
+IMAGES_STORE = "s3://bucketname/base-key-dir-if-any/"
 
+SCRAPEOPS_API_KEY = secrets['SCRAPEOPS_API_KEY']
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
-#AUTOTHROTTLE_ENABLED = True
+AUTOTHROTTLE_ENABLED = True
+
+EXTENSIONS = {
+        'scrapeops_scrapy.extension.ScrapeOpsMonitor': 500,
+        }
 # The initial download delay
 #AUTOTHROTTLE_START_DELAY = 5
 # The maximum download delay to be set in case of high latencies
@@ -97,6 +145,8 @@ DOWNLOADER_MIDDLEWARES = {
 #HTTPCACHE_DIR = 'httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+
+# DELTAFETCH_ENABLED = True
 
 # Set settings whose default value is deprecated to a future-proof value
 REQUEST_FINGERPRINTER_IMPLEMENTATION = '2.7'
